@@ -132,6 +132,18 @@ them.
 - **What happens at the empty date?** Nothing automatic. The *Low* binary
   sensor stays on; build a notification automation on it if you want alerts.
 
+## Troubleshooting
+
+- **A dialog shows a `debug_traceback` field:** that's the built-in safety net —
+  the flow caught an internal error and is showing the Python traceback instead
+  of failing with an opaque HTTP 500. Open an issue with its contents; the last
+  `Error:` line is what matters.
+- **Entities missing after an upgrade:** make sure the whole
+  `custom_components/mosquito_diffuser/` folder was replaced (check `version`
+  in `manifest.json`) and Home Assistant was restarted.
+- **`days_left` looks off after calibrating:** it assumes 24 h/day right after
+  a calibration; give it a day or two to converge to your real on/off rhythm.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
