@@ -17,7 +17,6 @@ from __future__ import annotations
 from datetime import datetime, time, timedelta
 from typing import Any, Callable
 
-from homeassistant.const import EVENT_HOMEASSISTANT_SHUTDOWN
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.event import (
@@ -116,7 +115,7 @@ class MosquitoDiffuserCoordinator:
             )
         self._unsubs.append(
             self.hass.bus.async_listen_once(
-                EVENT_HOMEASSISTANT_SHUTDOWN, self._on_shutdown_event
+                "homeassistant_shutdown", self._on_shutdown_event
             )
         )
 
