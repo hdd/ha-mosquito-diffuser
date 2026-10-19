@@ -9,7 +9,9 @@
           "name": "Name",
           "outlet_entity": "Outlet entity",
           "life_preset": "Cartridge type",
-          "life_hours": "Rated active hours (used when preset is 'Custom hours')",
+          "life_hours": "Total active hours (used when 'Custom hours' with days = 0)",
+          "custom_days": "Custom: duration in days (0 to use total hours above)",
+          "custom_hours_per_day": "Custom: hours per day (e.g. 8 for a nightly diffuser)",
           "low_threshold_pct": "Low cartridge warning threshold (%)",
           "schedule_enabled": "Switch the outlet on a schedule"
         }
@@ -39,7 +41,9 @@
           "name": "Name",
           "outlet_entity": "Outlet entity",
           "life_preset": "Cartridge type",
-          "life_hours": "Rated active hours (used when preset is 'Custom hours')",
+          "life_hours": "Total active hours (used when 'Custom hours' with days = 0)",
+          "custom_days": "Custom: duration in days (0 to use total hours above)",
+          "custom_hours_per_day": "Custom: hours per day (e.g. 8 for a nightly diffuser)",
           "low_threshold_pct": "Low cartridge warning threshold (%)",
           "schedule_enabled": "Switch the outlet on a schedule",
           "on_time": "Turn on at",

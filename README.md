@@ -68,10 +68,11 @@ then restart Home Assistant.
 
 > **Tip — cartridge type:** pick a preset in the setup/configuration dialog:
 > **15 days (360 h)**, **1 month (720 h)**, **3 months (2,160 h)** — counted as
-> continuous-use hours — or **Custom hours**. Since consumption only accrues
-> while the outlet is on, night-rated refills should use *Custom hours*
-> (nights × hours per night). Cartridge type is changed anytime under
-> *Configure*; the measured usage counter is kept.
+> continuous-use hours — or **Custom**. Custom takes either a plain total in
+> *active hours*, or more naturally **days × hours per day** (e.g. 45 days at
+> 8 h/day = 360 h). Since consumption only accrues while the outlet is on,
+> night-rated refills should use the days + h/day form. Cartridge type is
+> changed anytime under *Configure*; the measured usage counter is kept.
 
 ## Calibrating an existing cartridge
 

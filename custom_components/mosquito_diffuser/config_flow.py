@@ -80,6 +80,20 @@ def _base_schema(defaults: dict[str, Any]) -> vol.Schema:
             )
         ),
         vol.Required(
+            CONF_CUSTOM_DAYS,
+            default=defaults.get(CONF_CUSTOM_DAYS, 0),
+        ): NumberSelector(
+            NumberSelectorConfig(min=0, max=365, step=1, mode=NumberSelectorMode.BOX)
+        ),
+        vol.Required(
+            CONF_CUSTOM_HPD,
+            default=defaults.get(CONF_CUSTOM_HPD, 24),
+        ): NumberSelector(
+            NumberSelectorConfig(
+                min=0.5, max=24, step=0.5, unit_of_measurement="h/day"
+            )
+        ),
+        vol.Required(
             CONF_LOW_THRESHOLD,
             default=defaults.get(CONF_LOW_THRESHOLD, DEFAULT_LOW_THRESHOLD),
         ): NumberSelector(
@@ -115,11 +129,17 @@ def _times_schema(defaults: dict[str, Any]) -> vol.Schema:
 
 
 def _apply_life_preset(user_input: dict[str, Any]) -> None:
-    """Resolve the preset dropdown into concrete life hours."""
+    """Resolve the preset dropdown / days+hours fields into total life hours."""
     preset = user_input.get(CONF_LIFE_PRESET, "custom")
     hours = LIFE_PRESETS.get(preset)
     if hours is not None:
         user_input[CONF_LIFE_HOURS] = hours
+        return
+    # Custom: days × hours-per-day wins over a plain hour count when set.
+    days = float(user_input.get(CONF_CUSTOM_DAYS, 0) or 0)
+    if days > 0:
+        hpd = float(user_input.get(CONF_CUSTOM_HPD, 24) or 24)
+        user_input[CONF_LIFE_HOURS] = round(days * hpd, 2)
 
 
 class MosquitoDiffuserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
