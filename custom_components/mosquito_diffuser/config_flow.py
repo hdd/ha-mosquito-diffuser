@@ -174,11 +174,7 @@ class MosquitoDiffuserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def _debug_form(self, step_id: str, tb: str):
         """DEBUG build: surface the crash back through the flow response."""
         schema = vol.Schema(
-            {
-                vol.Required("debug_traceback", default=tb): TextSelector(
-                    selector.TextSelectorConfig(multiline=True)
-                )
-            }
+            {vol.Required("debug_traceback", default=tb): TextSelector()}
         )
         return self.async_show_form(step_id=step_id, data_schema=schema)
 
