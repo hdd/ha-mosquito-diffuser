@@ -201,6 +201,21 @@ class MosquitoDiffuserCoordinator:
         await self.async_persist()
         self._publish()
 
+    async def async_set_level(self, pct: float) -> None:
+        """Calibrate the counter from a remaining-life percentage.
+
+        The install timestamp is backdated assuming 24 h/day pace, so the
+        pace estimate starts conservative and converges to the real usage
+        rhythm over the following days.
+        """
+        pct = max(0.0, min(float(pct), 100.0))
+        now = dt_util.utcnow()
+        self.used_hours = round(self.life_hours * (1 - pct / 100), 2)
+        self.installed_at = now - timedelta(hours=self.used_hours / 24)
+        self.last_accrual = now
+        await self.async_persist()
+        self._publish()
+
     # ------------------------------------------------------------ persistence
     def _store_data(self) -> dict[str, Any]:
         return {

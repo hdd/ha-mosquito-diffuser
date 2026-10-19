@@ -14,6 +14,9 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
     TextSelector,
     TimeSelector,
 )
@@ -21,6 +24,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_LIFE_HOURS,
+    CONF_LIFE_PRESET,
     CONF_LOW_THRESHOLD,
     CONF_NAME,
     CONF_OFF_TIME,
@@ -33,20 +37,46 @@ from .const import (
     DEFAULT_OFF_TIME,
     DEFAULT_ON_TIME,
     DOMAIN,
+    LIFE_PRESETS,
     OUTLET_DOMAINS,
 )
 
 
+def _preset_options() -> list[dict[str, str]]:
+    """Preset dropdown entries."""
+    return [
+        {"value": "preset_15d", "label": "15 days (360 h active)"},
+        {"value": "preset_1m", "label": "1 month (720 h active)"},
+        {"value": "preset_3m", "label": "3 months (2,160 h active)"},
+        {"value": "custom", "label": "Custom hours"},
+    ]
+
+
 def _base_schema(defaults: dict[str, Any]) -> vol.Schema:
     """Schema for identity/outlet/cartridge fields (user + options flows)."""
+    current_life = float(defaults.get(CONF_LIFE_HOURS, DEFAULT_LIFE_HOURS) or DEFAULT_LIFE_HOURS)
+    current_preset = next(
+        (key for key, hours in LIFE_PRESETS.items() if hours == current_life), "custom"
+    )
     fields: dict[vol.Marker, Any] = {
         vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, DEFAULT_NAME)): TextSelector(),
         vol.Required(
+            CONF_LIFE_PRESET,
+            default=defaults.get(CONF_LIFE_PRESET, current_preset),
+        ): SelectSelector(
+            SelectSelectorConfig(options=_preset_options(), mode=SelectSelectorMode.DROPDOWN)
+        ),
+        vol.Required(
             CONF_LIFE_HOURS,
-            default=defaults.get(CONF_LIFE_HOURS, DEFAULT_LIFE_HOURS),
+            default=current_life,
+            description="Used when preset is 'Custom hours'",
         ): NumberSelector(
             NumberSelectorConfig(
-                min=1, max=2000, step=1, unit_of_measurement="h", mode=NumberSelectorMode.BOX
+                min=1,
+                max=8760,
+                step=1,
+                unit_of_measurement="h",
+                mode=NumberSelectorMode.BOX,
             )
         ),
         vol.Required(
@@ -84,6 +114,14 @@ def _times_schema(defaults: dict[str, Any]) -> vol.Schema:
     )
 
 
+def _apply_life_preset(user_input: dict[str, Any]) -> None:
+    """Resolve the preset dropdown into concrete life hours."""
+    preset = user_input.get(CONF_LIFE_PRESET, "custom")
+    hours = LIFE_PRESETS.get(preset)
+    if hours is not None:
+        user_input[CONF_LIFE_HOURS] = hours
+
+
 class MosquitoDiffuserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the initial setup flow."""
 
@@ -99,6 +137,7 @@ class MosquitoDiffuserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             await self.async_set_unique_id(user_input[CONF_OUTLET])
             self._abort_if_unique_id_configured()
+            _apply_life_preset(user_input)
             self._data = dict(user_input)
             if user_input[CONF_SCHEDULE_ENABLED]:
                 return await self.async_step_schedule()
@@ -140,6 +179,7 @@ class MosquitoDiffuserOptionsFlow(config_entries.OptionsFlow):
         current: dict[str, Any] = {**self.config_entry.data, **self.config_entry.options}
 
         if user_input is not None:
+            _apply_life_preset(user_input)
             enabled = bool(user_input.get(CONF_SCHEDULE_ENABLED, False))
             on_time = dt_util.parse_time(str(user_input.get(CONF_ON_TIME) or ""))
             off_time = dt_util.parse_time(str(user_input.get(CONF_OFF_TIME) or ""))

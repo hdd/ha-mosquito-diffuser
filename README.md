@@ -36,6 +36,7 @@ of your day/night schedule.
 | `sensor.<name>_days_left` | sensor | Days left at current pace (attrs: average h/day, installed at, rated life) |
 | `sensor.<name>_estimated_empty` | sensor | Timestamp of the expected empty date |
 | `button.<name>_new_cartridge` | button | Reset: new cartridge installed |
+| `number.<name>_cartridge_level` | number | Current level in % — set it to calibrate an already-used refill |
 | `switch.<name>_schedule` | switch | Pause/resume the built-in schedule |
 | `binary_sensor.<name>_low` | binary_sensor | On when remaining % ≤ threshold (`problem` class) |
 
@@ -65,9 +66,22 @@ then restart Home Assistant.
    double control.
 3. When you replace the refill, press the **New cartridge** button.
 
-> **Tip — rated life:** consumption only accrues while the outlet is on, so
-> set *rated life* to the refill's total **active** hours (nights × hours per
-> night), not calendar days.
+> **Tip — cartridge type:** pick a preset in the setup/configuration dialog:
+> **15 days (360 h)**, **1 month (720 h)**, **3 months (2,160 h)** — counted as
+> continuous-use hours — or **Custom hours**. Since consumption only accrues
+> while the outlet is on, night-rated refills should use *Custom hours*
+> (nights × hours per night). Cartridge type is changed anytime under
+> *Configure*; the measured usage counter is kept.
+
+## Calibrating an existing cartridge
+
+Installing the integration mid-refill? Set the **Cartridge level** number
+entity to the approximate remaining percentage — e.g. `60` for "a bit more
+than half left". The used-hours counter, remaining runtime, days-left
+forecast and empty-date estimate all re-derive from it immediately.
+
+Pace note: right after calibration the forecast assumes 24 h/day use; within
+a couple of days it converges to your real on/off rhythm.
 
 ## How the tracking works
 

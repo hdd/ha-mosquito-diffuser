@@ -8,14 +8,15 @@
         "data": {
           "name": "Name",
           "outlet_entity": "Outlet entity",
-          "life_hours": "Rated cartridge life (hours)",
+          "life_preset": "Cartridge type",
+          "life_hours": "Rated active hours (used when preset is 'Custom hours')",
           "low_threshold_pct": "Low cartridge warning threshold (%)",
           "schedule_enabled": "Switch the outlet on a schedule"
         }
       },
       "schedule": {
         "title": "Schedule",
-        "description": "The integration switches the outlet automatically at these times.",
+        "description": "The integration switches the outlet automatically at these times. Usage only accrues while the outlet is on, so day presets assume continuous use; for night-rated refills use 'Custom hours' (nights × hours per night).",
         "data": {
           "on_time": "Turn on at",
           "off_time": "Turn off at"
@@ -33,11 +34,12 @@
     "step": {
       "init": {
         "title": "Mosquito Diffuser settings",
-        "description": "Outlet, cartridge and schedule settings. The cartridge counter is kept when settings change.",
+        "description": "Outlet, cartridge and schedule settings. The cartridge counter is kept when settings change — swap refills of a different size, then just change the cartridge type here.",
         "data": {
           "name": "Name",
           "outlet_entity": "Outlet entity",
-          "life_hours": "Rated cartridge life (hours)",
+          "life_preset": "Cartridge type",
+          "life_hours": "Rated active hours (used when preset is 'Custom hours')",
           "low_threshold_pct": "Low cartridge warning threshold (%)",
           "schedule_enabled": "Switch the outlet on a schedule",
           "on_time": "Turn on at",
