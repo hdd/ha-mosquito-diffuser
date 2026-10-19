@@ -1,0 +1,52 @@
+{
+  "title": "Mosquito Diffuser",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Mosquito Diffuser",
+        "description": "Track the cartridge usage of a plug-in diffuser based on the outlet's on/off state.",
+        "data": {
+          "name": "Name",
+          "outlet_entity": "Outlet entity",
+          "life_hours": "Rated cartridge life (hours)",
+          "low_threshold_pct": "Low cartridge warning threshold (%)",
+          "schedule_enabled": "Switch the outlet on a schedule"
+        }
+      },
+      "schedule": {
+        "title": "Schedule",
+        "description": "The integration switches the outlet automatically at these times.",
+        "data": {
+          "on_time": "Turn on at",
+          "off_time": "Turn off at"
+        }
+      }
+    },
+    "error": {
+      "invalid_time": "Please enter a valid time (HH:MM)."
+    },
+    "abort": {
+      "already_configured": "This outlet is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mosquito Diffuser settings",
+        "description": "Outlet, cartridge and schedule settings. The cartridge counter is kept when settings change.",
+        "data": {
+          "name": "Name",
+          "outlet_entity": "Outlet entity",
+          "life_hours": "Rated cartridge life (hours)",
+          "low_threshold_pct": "Low cartridge warning threshold (%)",
+          "schedule_enabled": "Switch the outlet on a schedule",
+          "on_time": "Turn on at",
+          "off_time": "Turn off at"
+        }
+      }
+    },
+    "error": {
+      "times_required": "Both times are required while the schedule is enabled."
+    }
+  }
+}
