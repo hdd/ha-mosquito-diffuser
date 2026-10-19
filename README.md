@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/mosquito_diffuser_icon_256.png" width="160" alt="Mosquito Diffuser icon"/>
+</p>
+
 # Mosquito Diffuser for Home Assistant
 
 A custom integration that tracks the consumption of an anti-mosquito diffuser
