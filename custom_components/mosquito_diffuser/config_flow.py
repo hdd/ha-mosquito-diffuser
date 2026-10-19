@@ -52,7 +52,7 @@ def _preset_options() -> list[dict[str, str]]:
     ]
 
 
-def _base_schema(defaults: dict[str, Any]) -> vol.Schema:
+def _base_schema(defaults: dict[str, Any], include_level: bool = False) -> vol.Schema:
     """Schema for identity/outlet/cartridge fields (user + options flows)."""
     current_life = float(defaults.get(CONF_LIFE_HOURS, DEFAULT_LIFE_HOURS) or DEFAULT_LIFE_HOURS)
     current_preset = next(
@@ -60,6 +60,15 @@ def _base_schema(defaults: dict[str, Any]) -> vol.Schema:
     )
     fields: dict[vol.Marker, Any] = {
         vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, DEFAULT_NAME)): TextSelector(),
+    }
+    if include_level:
+        fields[vol.Required(
+            CONF_LEVEL_PCT,
+            default=defaults.get(CONF_LEVEL_PCT, 100),
+        )] = NumberSelector(
+            NumberSelectorConfig(min=0, max=100, step=1, unit_of_measurement="%")
+        )
+    fields.update({
         vol.Required(
             CONF_LIFE_PRESET,
             default=defaults.get(CONF_LIFE_PRESET, current_preset),
@@ -103,7 +112,7 @@ def _base_schema(defaults: dict[str, Any]) -> vol.Schema:
             CONF_SCHEDULE_ENABLED,
             default=defaults.get(CONF_SCHEDULE_ENABLED, True),
         ): BooleanSelector(),
-    }
+    })
     if CONF_OUTLET in defaults:
         fields[vol.Required(CONF_OUTLET, default=defaults[CONF_OUTLET])] = EntitySelector(
             EntitySelectorConfig(domain=OUTLET_DOMAINS)
@@ -194,12 +203,18 @@ class MosquitoDiffuserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class MosquitoDiffuserOptionsFlow(config_entries.OptionsFlow):
     """Edit every setting of an existing instance in one form."""
 
+    def _coordinator(self):
+        return self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
         current: dict[str, Any] = {**self.config_entry.data, **self.config_entry.options}
+        coordinator = self._coordinator()
 
         if user_input is not None:
             _apply_life_preset(user_input)
+            # Calibration: not persisted in options, applied to the counter
+            level = user_input.pop(CONF_LEVEL_PCT, None)
             enabled = bool(user_input.get(CONF_SCHEDULE_ENABLED, False))
             on_time = dt_util.parse_time(str(user_input.get(CONF_ON_TIME) or ""))
             off_time = dt_util.parse_time(str(user_input.get(CONF_OFF_TIME) or ""))
@@ -210,8 +225,13 @@ class MosquitoDiffuserOptionsFlow(config_entries.OptionsFlow):
                     user_input[CONF_ON_TIME] = on_time.strftime("%H:%M")
                 if off_time:
                     user_input[CONF_OFF_TIME] = off_time.strftime("%H:%M")
+                if level is not None and coordinator is not None:
+                    if abs(float(level) - coordinator.remaining_pct) >= 0.5:
+                        await coordinator.async_set_level(float(level))
                 return self.async_create_entry(title="", data=user_input)
 
+        if coordinator is not None:
+            current[CONF_LEVEL_PCT] = round(coordinator.remaining_pct, 0)
         fields = dict(_base_schema(current).schema)
         fields.update(_times_schema(current).schema)
         return self.async_show_form(

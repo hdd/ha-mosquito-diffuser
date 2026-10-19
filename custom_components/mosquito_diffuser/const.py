@@ -17,6 +17,7 @@ PLATFORMS = [
 CONF_NAME = "name"
 CONF_OUTLET = "outlet_entity"
 CONF_LIFE_PRESET = "life_preset"
+CONF_LEVEL_PCT = "level_pct"
 CONF_CUSTOM_DAYS = "custom_days"
 CONF_CUSTOM_HPD = "custom_hours_per_day"
 CONF_LIFE_HOURS = "life_hours"
