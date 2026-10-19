@@ -80,13 +80,19 @@ then restart Home Assistant.
 
 ## Calibrating an existing cartridge
 
-Installing the integration mid-refill? Two equivalent ways to calibrate — both
-rewrite the used-hours counter from a remaining percentage:
+Installing the integration mid-refill? Three equivalent ways to calibrate —
+all rewrite the used-hours counter from a remaining percentage:
 
 - **Configure dialog** (Settings → Devices & services → Mosquito Diffuser →
-  *Configure*): set **Current cartridge level (%)**.
+  *Configure*): set **Current cartridge level (%)**, or tick **I just
+  installed a new cartridge** to reset to 100 %.
 - **Number entity** `number.<name>_cartridge_level` on the device page — also
   handy on dashboards and in automations.
+- **Button** `button.<name>_new_cartridge` = reset to a fresh 100 %.
+
+Expected duration is configured in the same dialog via **Cartridge type**
+presets (15 days / 1 month / 3 months) or **Custom** = days × hours-per-day
+(or a plain total in hours).
 
 Pace note: right after calibration the forecast assumes 24 h/day use; within
 a couple of days it converges to your real on/off rhythm.

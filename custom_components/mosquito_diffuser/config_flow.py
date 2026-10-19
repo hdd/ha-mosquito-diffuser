@@ -23,10 +23,12 @@ from homeassistant.helpers.selector import (
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_LEVEL_PCT,
     CONF_LIFE_HOURS,
     CONF_LIFE_PRESET,
     CONF_LOW_THRESHOLD,
     CONF_NAME,
+    CONF_NEW_CARTRIDGE,
     CONF_OFF_TIME,
     CONF_ON_TIME,
     CONF_OUTLET,
@@ -204,7 +206,19 @@ class MosquitoDiffuserOptionsFlow(config_entries.OptionsFlow):
     """Edit every setting of an existing instance in one form."""
 
     def _coordinator(self):
-        return self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        """Return the coordinator, or None if not reachable from this flow.
+
+        Access to hass/config_entry varies across HA versions; this must
+        never raise, or the whole options dialog 500s.
+        """
+        try:
+            hass = getattr(self, "hass", None)
+            entry = getattr(self, "config_entry", None)
+            if hass is None or entry is None:
+                return None
+            return hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        except Exception:  # noqa: BLE001 - dialog must always render
+            return None
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
@@ -215,6 +229,7 @@ class MosquitoDiffuserOptionsFlow(config_entries.OptionsFlow):
             _apply_life_preset(user_input)
             # Calibration: not persisted in options, applied to the counter
             level = user_input.pop(CONF_LEVEL_PCT, None)
+            new_cartridge = bool(user_input.pop(CONF_NEW_CARTRIDGE, False))
             enabled = bool(user_input.get(CONF_SCHEDULE_ENABLED, False))
             on_time = dt_util.parse_time(str(user_input.get(CONF_ON_TIME) or ""))
             off_time = dt_util.parse_time(str(user_input.get(CONF_OFF_TIME) or ""))
@@ -225,15 +240,20 @@ class MosquitoDiffuserOptionsFlow(config_entries.OptionsFlow):
                     user_input[CONF_ON_TIME] = on_time.strftime("%H:%M")
                 if off_time:
                     user_input[CONF_OFF_TIME] = off_time.strftime("%H:%M")
-                if level is not None and coordinator is not None:
-                    if abs(float(level) - coordinator.remaining_pct) >= 0.5:
+                if coordinator is not None:
+                    if new_cartridge:
+                        await coordinator.async_reset_cartridge()
+                    elif level is not None and abs(float(level) - coordinator.remaining_pct) >= 0.5:
                         await coordinator.async_set_level(float(level))
                 return self.async_create_entry(title="", data=user_input)
 
-        if coordinator is not None:
+        include_level = coordinator is not None
+        if include_level:
             current[CONF_LEVEL_PCT] = round(coordinator.remaining_pct, 0)
-        fields = dict(_base_schema(current).schema)
+        fields = dict(_base_schema(current, include_level=include_level).schema)
         fields.update(_times_schema(current).schema)
+        if coordinator is not None:
+            fields[vol.Required(CONF_NEW_CARTRIDGE, default=False)] = BooleanSelector()
         return self.async_show_form(
             step_id="init", data_schema=vol.Schema(fields), errors=errors
         )
