@@ -141,6 +141,12 @@ def _times_schema(defaults: dict[str, Any]) -> vol.Schema:
     )
 
 
+def _debug_form(flow, step_id: str, tb: str):
+    """DEBUG build: surface a crash back through the flow response."""
+    schema = vol.Schema({vol.Required("debug_traceback", default=tb): TextSelector()})
+    return flow.async_show_form(step_id=step_id, data_schema=schema)
+
+
 def _apply_life_preset(user_input: dict[str, Any]) -> None:
     """Resolve the preset dropdown / days+hours fields into total life hours."""
     preset = user_input.get(CONF_LIFE_PRESET, "custom")
@@ -169,14 +175,7 @@ class MosquitoDiffuserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             return await self._async_user_step(user_input)
         except Exception:
-            return self._debug_form("user", traceback.format_exc()[-1200:])
-
-    def _debug_form(self, step_id: str, tb: str):
-        """DEBUG build: surface the crash back through the flow response."""
-        schema = vol.Schema(
-            {vol.Required("debug_traceback", default=tb): TextSelector()}
-        )
-        return self.async_show_form(step_id=step_id, data_schema=schema)
+            return _debug_form(self, "user", traceback.format_exc()[-1500:])
 
     async def _async_user_step(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
@@ -239,7 +238,7 @@ class MosquitoDiffuserOptionsFlow(config_entries.OptionsFlow):
         try:
             return await self._async_init_step(user_input)
         except Exception:
-            return self._debug_form("init", traceback.format_exc()[-1200:])
+            return _debug_form(self, "init", traceback.format_exc()[-1500:])
 
     async def _async_init_step(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
