@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import traceback
+
 from typing import Any
 
 import voluptuous as vol
@@ -164,6 +166,23 @@ class MosquitoDiffuserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Step 1: name, outlet and cartridge settings."""
+        try:
+            return await self._async_user_step(user_input)
+        except Exception:
+            return self._debug_form("user", traceback.format_exc()[-1200:])
+
+    def _debug_form(self, step_id: str, tb: str):
+        """DEBUG build: surface the crash back through the flow response."""
+        schema = vol.Schema(
+            {
+                vol.Required("debug_traceback", default=tb): TextSelector(
+                    selector.TextSelectorConfig(multiline=True)
+                )
+            }
+        )
+        return self.async_show_form(step_id=step_id, data_schema=schema)
+
+    async def _async_user_step(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
         if user_input is not None:
             await self.async_set_unique_id(user_input[CONF_OUTLET])
@@ -221,6 +240,12 @@ class MosquitoDiffuserOptionsFlow(config_entries.OptionsFlow):
             return None
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
+        try:
+            return await self._async_init_step(user_input)
+        except Exception:
+            return self._debug_form("init", traceback.format_exc()[-1200:])
+
+    async def _async_init_step(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
         current: dict[str, Any] = {**self.config_entry.data, **self.config_entry.options}
         coordinator = self._coordinator()
