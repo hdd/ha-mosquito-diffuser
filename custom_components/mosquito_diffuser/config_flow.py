@@ -25,6 +25,8 @@ from homeassistant.helpers.selector import (
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_CUSTOM_DAYS,
+    CONF_CUSTOM_HPD,
     CONF_LEVEL_PCT,
     CONF_LIFE_HOURS,
     CONF_LIFE_PRESET,
