@@ -1,13 +1,13 @@
 {
   "domain": "mosquito_diffuser",
   "name": "Mosquito Diffuser",
-  "codeowners": ["@lorenzo"],
+  "codeowners": ["@efesto"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/lorenzo/ha-mosquito-diffuser",
+  "documentation": "https://gitea.home.casamayolica.com/efesto/ha-mosquito-diffuser",
   "integration_type": "hub",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/lorenzo/ha-mosquito-diffuser/issues",
+  "issue_tracker": "https://gitea.home.casamayolica.com/efesto/ha-mosquito-diffuser/issues",
   "requirements": [],
   "version": "1.0.0"
 }
