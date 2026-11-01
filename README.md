@@ -27,6 +27,9 @@ of your day/night schedule.
   pauses it without deleting it.
 - **Low-cartridge warning** — a binary sensor that turns on at a configurable
   remaining percentage.
+- **Dashboard widget** — a bundled Lovelace card: cartridge gauge, days left,
+  runtime left, estimated empty date and one-tap reset / schedule / power
+  actions.
 - **Multiple diffusers** — each config entry is an independent device with its
   own cartridge counter.
 
@@ -115,6 +118,55 @@ a couple of days it converges to your real on/off rhythm.
 *Configure* on the integration card lets you change the name, outlet,
 rated life, threshold and schedule at any time. The cartridge counter is
 preserved across changes and restarts.
+
+## Dashboard widget
+
+The integration ships a compact **Lovelace card**: cartridge status at a
+glance, with quick actions.
+
+1. Register it as a dashboard resource once:
+   *Settings → Dashboards → ⋮ → Manage resources → + Add resource*
+   - URL: `/mosquito_diffuser/mosquito-diffuser-card.js`
+   - Type: **JavaScript module**
+2. Add it to a dashboard (a **Manual** card in the UI editor, or YAML):
+
+```yaml
+type: custom:mosquito-diffuser-card
+entity: sensor.<name>_remaining
+```
+
+The card shows:
+
+- a **donut gauge** with the remaining percentage — green / amber / red as
+  the cartridge depletes (amber from double your low threshold, red at it),
+- **days left** at your measured pace, **runtime left**, **hours used**,
+- the **estimated empty date**, the install date, your average h/day and a
+  *Calibrate* shortcut (opens the level number entity),
+- a pulsing **diffusing now** dot (the outlet state) and a red
+  **low-cartridge** banner when the threshold is crossed,
+- actions: **New cartridge** (press twice — it zeroes the counter), the
+  **Schedule** pause/resume switch and the **outlet toggle**.
+
+Clicking the gauge or any stat opens that entity's more-info dialog.
+
+### Card options
+
+| Key | Default | Description |
+|---|---|---|
+| `entity` | — | Any entity of this diffuser (e.g. `sensor.<name>_remaining`); siblings are auto-detected from the id |
+| `name` | device name | Card title |
+| `icon` | `mdi:bug` | Header icon |
+| `outlet_entity` | auto (from sensor attributes) | The smart plug entity |
+| `days_entity`, `runtime_entity`, `used_entity`, `empty_entity`, `button_entity`, `level_entity`, `schedule_entity`, `low_entity` | auto | Explicit overrides, e.g. if you renamed the entities |
+
+> The card is served by the integration itself from
+> `custom_components/mosquito_diffuser/frontend/`, so it updates together
+> with the integration — one resource entry, nothing else to keep in sync.
+> Prefer a plain file? Copy `mosquito-diffuser-card.js` to `config/www/`
+> and register `/local/mosquito-diffuser-card.js` instead.
+>
+> After installing/updating the integration, reload the dashboard page
+> (hard refresh) so the browser picks up the new card script.
 
 ## Migrating from the YAML/package prototype
 

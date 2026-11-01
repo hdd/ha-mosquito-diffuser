@@ -14,6 +14,13 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN, PLATFORMS
 from .coordinator import MosquitoDiffuserCoordinator
+from .frontend import async_register_frontend
+
+
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
+    """Serve the dashboard widget; each diffuser sets up via a config entry."""
+    await async_register_frontend(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
