@@ -29,8 +29,8 @@ of your day/night schedule.
 - **Low-cartridge warning** — a binary sensor that turns on at a configurable
   remaining percentage.
 - **Dashboard widget** — a bundled Lovelace card: cartridge gauge, days left,
-  runtime left, estimated empty date and one-tap reset / schedule / power
-  actions.
+  a single used/left hours bar, estimated empty date and one-tap
+  reset / schedule / power actions.
 - **Multiple diffusers** — each config entry is an independent device with its
   own cartridge counter.
 
@@ -164,10 +164,11 @@ The card shows:
   green / amber / red as the cartridge depletes (amber from double your
   low threshold, red at it), with the remaining percentage below;
   set `gauge: donut` for the classic ring look,
-- **stat tiles** — days left, runtime left and hours used as tile cells with
-  big values, each with a mini progress bar on its natural scale (used
-  fills toward red, runtime drains, days-left shows projected lifetime
-  elapsed); `stats: plain` brings back the classic text rows,
+- **stat tiles** — days left plus a single **used / left** hours tile: since
+  used and remaining hours are complementary (used + left = rated life), one
+  bar renders both — a neutral grey segment for hours used, then runtime
+  left in the gauge's green/amber/red; `stats: plain` brings back the
+  classic text rows,
 - the **estimated empty date**, the install date, your average h/day, the
   **schedule window** — e.g. `22:00 → 08:00 · Apr–Oct` — and a
   *Calibrate* shortcut (opens the level number entity),
@@ -186,7 +187,7 @@ Clicking the gauge or any stat opens that entity's more-info dialog.
 | `name` | device name | Card title |
 | `icon` | `mdi:mosquito` | Header icon |
 | `gauge` | `bar` | Gauge style: vertical progress bar (`bar`) or the classic ring (`donut`) |
-| `stats` | `tiles` | Days-left / runtime / used display: tiles with mini progress bars (`tiles`) or plain text rows (`plain`) |
+| `stats` | `tiles` | Hours display: tiles with a days-left bar and a split used/left bar (`tiles`) or plain text rows (`plain`) |
 | `outlet_entity` | auto (from sensor attributes) | The smart plug entity |
 | `days_entity`, `runtime_entity`, `used_entity`, `empty_entity`, `button_entity`, `level_entity`, `schedule_entity`, `low_entity` | auto | Explicit overrides, e.g. if you renamed the entities |
 

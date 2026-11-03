@@ -4,8 +4,9 @@
  *
  * Cartridge status at a glance: a vertical cartridge gauge (or the classic
  * donut, `gauge: donut`) with the remaining
- * percentage, days left at the measured pace, runtime left, hours used,
- * the estimated empty date, install date and average pace, the schedule
+ * percentage, days left at the measured pace, a single used/left hours bar
+ * (the two are complementary: used + left = rated life), the estimated
+ * empty date, install date and average pace, the schedule
  * window with its active months — plus a
  * low-cartridge banner and one-tap actions: "new cartridge" reset
  * (two-tap confirm), schedule pause/resume and outlet toggle. The subtitle
@@ -27,7 +28,7 @@
  *   gauge ("bar" default, "donut"), stats ("tiles" default, "plain")
  */
 
-const CARD_VERSION = "1.3.3";
+const CARD_VERSION = "1.3.5";
 const DEFAULT_ICON = "mdi:mosquito";
 
 /** Known entity-id suffixes of the integration (longest first). */
@@ -226,16 +227,20 @@ const STYLE = `
   color: var(--primary-text-color); white-space: nowrap;
 }
 .tile-bar {
+  display: flex;
   margin-top: 6px; height: 4px;
   border-radius: 2px;
   background: rgba(127, 127, 127, 0.25);
   overflow: hidden;
 }
 .tile-fill {
-  height: 100%; border-radius: 2px;
+  height: 100%;
   background: var(--ring);
   transition: width 0.6s ease;
 }
+.tile-fill:first-child { border-radius: 2px 0 0 2px; }
+.tile-fill:last-child { border-radius: 0 2px 2px 0; }
+.tile-fill:first-child:last-child { border-radius: 2px; }
 
 .meta {
   display: flex; flex-wrap: wrap; gap: 4px 16px;
@@ -523,51 +528,67 @@ class MosquitoDiffuserCard extends HTMLElement {
       const t = new Date(String(daysAttrs.installed_at).replace(" ", "T")).getTime();
       if (!isNaN(t)) daysInstalled = Math.max((Date.now() - t) / 86400000, 0);
     }
-    const usedPct = lifeHours && usedH !== null ? clampPct((usedH / lifeHours) * 100) : null;
+    // Used and remaining are complementary (used + left = rated life), so
+    // they share one bar: a neutral "used" segment, then runtime left in
+    // the health color. Without rated life, the split normalizes to their sum.
+    const totalH = lifeHours || (usedH !== null && remH !== null ? usedH + remH : null);
+    const usedPct = totalH !== null && usedH !== null ? clampPct((usedH / totalH) * 100) : null;
     const remPct =
-      lifeHours && remH !== null ? clampPct((remH / lifeHours) * 100) : this._pctValue();
+      totalH !== null && remH !== null ? clampPct((remH / totalH) * 100) : this._pctValue();
     const daysElapsedPct =
       daysInstalled !== null && daysLeft !== null && daysInstalled + daysLeft > 0
         ? clampPct((daysInstalled / (daysInstalled + daysLeft)) * 100)
         : null;
 
-    const tileRow = (label, value, entityId, frac, ring) =>
+    const tileRow = (label, value, entityId, segs) =>
       `<div class="tile${entityId ? " clickable" : ""}"` +
       `${entityId ? ` data-entity="${esc(entityId)}"` : ""}>` +
       `<div class="tile-top">` +
       `<span class="tile-label">${esc(label)}</span>` +
       `<span class="tile-value">${esc(value)}</span></div>` +
-      (frac === null
-        ? ""
-        : `<div class="tile-bar"><div class="tile-fill"` +
-          ` style="width:${frac}%; --ring:${ring}"></div></div>`) +
+      (segs
+        ? `<div class="tile-bar">` +
+          segs
+            .map(
+              (seg) =>
+                `<div class="tile-fill" style="width:${seg.frac}%; --ring:${seg.ring}"></div>`
+            )
+            .join("") +
+          `</div>`
+        : "") +
       `</div>`;
+
+    // Merged hours value: "123 / 597 h" when both sides are known.
+    const hShort = (v) => (v < 1 ? "<1" : `${this._num(v)}`);
+    const hoursValue =
+      usedH !== null && remH !== null
+        ? `${hShort(usedH)} / ${hShort(remH)} h`
+        : usedH !== null
+          ? `${this._hours(r.used)} used`
+          : remH !== null
+            ? `${this._hours(r.runtime)} left`
+            : "—";
+    const hoursSegs = [];
+    if (usedPct !== null) hoursSegs.push({ frac: usedPct, ring: "rgba(127,127,127,0.55)" });
+    if (remPct !== null) hoursSegs.push({ frac: remPct, ring: this._ringColor(remPct) });
 
     const stats =
       this._config.stats === "plain"
         ? statRow("Days left", this._days() || "—", r.days) +
-          statRow("Runtime left", this._hours(r.runtime) || "—", r.runtime) +
-          statRow("Used", this._hours(r.used) || "—", r.used)
+          statRow("Used / left", hoursValue, r.used || r.runtime)
         : tileRow(
             "Days left",
             this._days() || "—",
             r.days,
-            daysElapsedPct,
-            this._ringColor(daysElapsedPct === null ? null : 100 - daysElapsedPct)
+            daysElapsedPct === null
+              ? null
+              : [{ frac: daysElapsedPct, ring: this._ringColor(100 - daysElapsedPct) }]
           ) +
           tileRow(
-            "Runtime left",
-            this._hours(r.runtime) || "—",
-            r.runtime,
-            remPct,
-            this._ringColor(remPct)
-          ) +
-          tileRow(
-            "Used",
-            this._hours(r.used) || "—",
-            r.used,
-            usedPct,
-            this._ringColor(usedPct === null ? null : 100 - usedPct)
+            "Used / left",
+            hoursValue,
+            r.used || r.runtime,
+            hoursSegs.length ? hoursSegs : null
           );
 
     const metaBits = [];
