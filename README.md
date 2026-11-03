@@ -147,6 +147,10 @@ integration alone for the rest of the year:
 The integration ships a compact **Lovelace card**: cartridge status at a
 glance, with quick actions.
 
+<p align="center">
+  <img src="screenshots/widget.png" alt="Mosquito Diffuser card on a dashboard" width="480"/>
+</p>
+
 1. Register it as a dashboard resource once:
    *Settings → Dashboards → ⋮ → Manage resources → + Add resource*
    - URL: `/mosquito_diffuser/mosquito-diffuser-card.js`
