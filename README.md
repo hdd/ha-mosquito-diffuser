@@ -184,7 +184,7 @@ Clicking the gauge or any stat opens that entity's more-info dialog.
 |---|---|---|
 | `entity` | — | Any entity of this diffuser (e.g. `sensor.<name>_remaining`); siblings are auto-detected from the id |
 | `name` | device name | Card title |
-| `icon` | `mdi:bug` | Header icon |
+| `icon` | `mdi:mosquito` | Header icon |
 | `gauge` | `bar` | Gauge style: vertical progress bar (`bar`) or the classic ring (`donut`) |
 | `stats` | `tiles` | Days-left / runtime / used display: tiles with mini progress bars (`tiles`) or plain text rows (`plain`) |
 | `outlet_entity` | auto (from sensor attributes) | The smart plug entity |

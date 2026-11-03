@@ -27,8 +27,8 @@
  *   gauge ("bar" default, "donut"), stats ("tiles" default, "plain")
  */
 
-const CARD_VERSION = "1.3.2";
-const DEFAULT_ICON = "mdi:bug";
+const CARD_VERSION = "1.3.3";
+const DEFAULT_ICON = "mdi:mosquito";
 
 /** Known entity-id suffixes of the integration (longest first). */
 const SUFFIXES = [
