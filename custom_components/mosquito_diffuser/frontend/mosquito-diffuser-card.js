@@ -24,10 +24,10 @@
  *
  *   name, icon, outlet_entity, days_entity, runtime_entity, used_entity,
  *   empty_entity, button_entity, level_entity, schedule_entity, low_entity,
- *   gauge ("bar" default, "donut")
+ *   gauge ("bar" default, "donut"), stats ("tiles" default, "plain")
  */
 
-const CARD_VERSION = "1.3.1";
+const CARD_VERSION = "1.3.2";
 const DEFAULT_ICON = "mdi:bug";
 
 /** Known entity-id suffixes of the integration (longest first). */
@@ -207,6 +207,35 @@ const STYLE = `
 .stat:hover { background: var(--secondary-background-color, rgba(127, 127, 127, 0.12)); }
 .stat-label { font-size: 13px; color: var(--secondary-text-color); }
 .stat-value { font-size: 14px; font-weight: 600; color: var(--primary-text-color); }
+
+/* Stat tiles with mini progress bars (default) */
+.tile {
+  padding: 7px 10px 8px;
+  border-radius: 10px;
+  background: var(--secondary-background-color, rgba(127, 127, 127, 0.10));
+}
+.tile.clickable { cursor: pointer; }
+.tile:hover { background: var(--secondary-background-color, rgba(127, 127, 127, 0.16)); }
+.tile-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.tile-label {
+  font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--secondary-text-color);
+}
+.tile-value {
+  font-size: 15px; font-weight: 600;
+  color: var(--primary-text-color); white-space: nowrap;
+}
+.tile-bar {
+  margin-top: 6px; height: 4px;
+  border-radius: 2px;
+  background: rgba(127, 127, 127, 0.25);
+  overflow: hidden;
+}
+.tile-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--ring);
+  transition: width 0.6s ease;
+}
 
 .meta {
   display: flex; flex-wrap: wrap; gap: 4px 16px;
@@ -477,10 +506,69 @@ class MosquitoDiffuserCard extends HTMLElement {
       `<span class="stat-label">${esc(label)}</span>` +
       `<span class="stat-value">${esc(value)}</span></div>`;
 
+    // Fractions for the tile mini-bars (0–100, null = unknown → no bar).
+    const clampPct = (v) => Math.max(0, Math.min(100, v));
+    const numState = (id) => {
+      const s = this._st(id);
+      if (!s) return null;
+      const v = Number(s.state);
+      return Number.isFinite(v) ? v : null;
+    };
+    const lifeHours = Number(daysAttrs.rated_life_hours) || null;
+    const usedH = numState(r.used);
+    const remH = numState(r.runtime);
+    const daysLeft = numState(r.days);
+    let daysInstalled = null;
+    if (daysAttrs.installed_at) {
+      const t = new Date(String(daysAttrs.installed_at).replace(" ", "T")).getTime();
+      if (!isNaN(t)) daysInstalled = Math.max((Date.now() - t) / 86400000, 0);
+    }
+    const usedPct = lifeHours && usedH !== null ? clampPct((usedH / lifeHours) * 100) : null;
+    const remPct =
+      lifeHours && remH !== null ? clampPct((remH / lifeHours) * 100) : this._pctValue();
+    const daysElapsedPct =
+      daysInstalled !== null && daysLeft !== null && daysInstalled + daysLeft > 0
+        ? clampPct((daysInstalled / (daysInstalled + daysLeft)) * 100)
+        : null;
+
+    const tileRow = (label, value, entityId, frac, ring) =>
+      `<div class="tile${entityId ? " clickable" : ""}"` +
+      `${entityId ? ` data-entity="${esc(entityId)}"` : ""}>` +
+      `<div class="tile-top">` +
+      `<span class="tile-label">${esc(label)}</span>` +
+      `<span class="tile-value">${esc(value)}</span></div>` +
+      (frac === null
+        ? ""
+        : `<div class="tile-bar"><div class="tile-fill"` +
+          ` style="width:${frac}%; --ring:${ring}"></div></div>`) +
+      `</div>`;
+
     const stats =
-      statRow("Days left", this._days() || "—", r.days) +
-      statRow("Runtime left", this._hours(r.runtime) || "—", r.runtime) +
-      statRow("Used", this._hours(r.used) || "—", r.used);
+      this._config.stats === "plain"
+        ? statRow("Days left", this._days() || "—", r.days) +
+          statRow("Runtime left", this._hours(r.runtime) || "—", r.runtime) +
+          statRow("Used", this._hours(r.used) || "—", r.used)
+        : tileRow(
+            "Days left",
+            this._days() || "—",
+            r.days,
+            daysElapsedPct,
+            this._ringColor(daysElapsedPct === null ? null : 100 - daysElapsedPct)
+          ) +
+          tileRow(
+            "Runtime left",
+            this._hours(r.runtime) || "—",
+            r.runtime,
+            remPct,
+            this._ringColor(remPct)
+          ) +
+          tileRow(
+            "Used",
+            this._hours(r.used) || "—",
+            r.used,
+            usedPct,
+            this._ringColor(usedPct === null ? null : 100 - usedPct)
+          );
 
     const metaBits = [];
     const emptyState = this._st(r.empty);

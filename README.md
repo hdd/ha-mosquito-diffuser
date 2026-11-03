@@ -164,7 +164,10 @@ The card shows:
   green / amber / red as the cartridge depletes (amber from double your
   low threshold, red at it), with the remaining percentage below;
   set `gauge: donut` for the classic ring look,
-- **days left** at your measured pace, **runtime left**, **hours used**,
+- **stat tiles** — days left, runtime left and hours used as tile cells with
+  big values, each with a mini progress bar on its natural scale (used
+  fills toward red, runtime drains, days-left shows projected lifetime
+  elapsed); `stats: plain` brings back the classic text rows,
 - the **estimated empty date**, the install date, your average h/day, the
   **schedule window** — e.g. `22:00 → 08:00 · Apr–Oct` — and a
   *Calibrate* shortcut (opens the level number entity),
@@ -183,6 +186,7 @@ Clicking the gauge or any stat opens that entity's more-info dialog.
 | `name` | device name | Card title |
 | `icon` | `mdi:bug` | Header icon |
 | `gauge` | `bar` | Gauge style: vertical progress bar (`bar`) or the classic ring (`donut`) |
+| `stats` | `tiles` | Days-left / runtime / used display: tiles with mini progress bars (`tiles`) or plain text rows (`plain`) |
 | `outlet_entity` | auto (from sensor attributes) | The smart plug entity |
 | `days_entity`, `runtime_entity`, `used_entity`, `empty_entity`, `button_entity`, `level_entity`, `schedule_entity`, `low_entity` | auto | Explicit overrides, e.g. if you renamed the entities |
 
