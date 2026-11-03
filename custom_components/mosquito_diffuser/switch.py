@@ -33,10 +33,16 @@ class ScheduleSwitch(MosquitoDiffuserEntity, SwitchEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
-        return {
-            "active_months": sorted(self.coordinator.active_months),
-            "in_season": self.coordinator.in_season,
+        coordinator = self.coordinator
+        attrs: dict = {
+            "active_months": sorted(coordinator.active_months),
+            "in_season": coordinator.in_season,
         }
+        if coordinator.on_time:
+            attrs["on_time"] = coordinator.on_time.strftime("%H:%M")
+        if coordinator.off_time:
+            attrs["off_time"] = coordinator.off_time.strftime("%H:%M")
+        return attrs
 
     async def async_turn_on(self, **kwargs) -> None:
         await self.coordinator.async_set_schedule_active(True)

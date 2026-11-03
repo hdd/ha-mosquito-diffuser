@@ -5,7 +5,8 @@
  * Cartridge status at a glance: a vertical cartridge gauge (or the classic
  * donut, `gauge: donut`) with the remaining
  * percentage, days left at the measured pace, runtime left, hours used,
- * the estimated empty date, install date and average pace — plus a
+ * the estimated empty date, install date and average pace, the schedule
+ * window with its active months — plus a
  * low-cartridge banner and one-tap actions: "new cartridge" reset
  * (two-tap confirm), schedule pause/resume and outlet toggle. The subtitle
  * flags when the schedule is paused or outside its active months.
@@ -26,7 +27,7 @@
  *   gauge ("bar" default, "donut")
  */
 
-const CARD_VERSION = "1.3.0";
+const CARD_VERSION = "1.3.1";
 const DEFAULT_ICON = "mdi:bug";
 
 /** Known entity-id suffixes of the integration (longest first). */
@@ -60,6 +61,37 @@ const esc = (value) =>
   String(value == null ? "" : value).replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
   );
+
+/** Month abbreviations for compact season ranges (e.g. "Apr–Oct"). */
+const MONTH_ABBR = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+/** Compact label for a list of month numbers; "" when nothing is worth showing. */
+const monthsSpan = (months) => {
+  if (!Array.isArray(months)) return "";
+  const set = [...new Set(months.map(Number))]
+    .filter((m) => m >= 1 && m <= 12)
+    .sort((a, b) => a - b);
+  if (set.length === 0 || set.length === 12) return "";
+  const runs = [];
+  let start = set[0];
+  let prev = set[0];
+  for (let i = 1; i <= set.length; i++) {
+    const m = set[i];
+    if (m !== prev + 1) {
+      runs.push(
+        start === prev
+          ? MONTH_ABBR[start - 1]
+          : `${MONTH_ABBR[start - 1]}–${MONTH_ABBR[prev - 1]}`
+      );
+      start = m;
+    }
+    prev = m;
+  }
+  return runs.join(", ");
+};
 
 const STYLE = `
 :host { display: block; }
@@ -384,6 +416,8 @@ class MosquitoDiffuserCard extends HTMLElement {
         attrs.average_hours_per_day || "",
         attrs.installed_at || "",
         attrs.in_season === undefined ? "" : String(attrs.in_season),
+        attrs.on_time || "",
+        attrs.off_time || "",
       ].join("=");
     };
     return [
@@ -469,6 +503,17 @@ class MosquitoDiffuserCard extends HTMLElement {
       metaBits.push(
         `<span class="meta-item" data-entity="${esc(r.days)}">` +
           `≈ ${this._num(avgPerDay)} h/day</span>`
+      );
+    }
+    const schedAttrs = (scheduleState && scheduleState.attributes) || {};
+    if (schedAttrs.on_time && schedAttrs.off_time) {
+      const span = monthsSpan(schedAttrs.active_months);
+      metaBits.push(
+        `<span class="meta-item" data-entity="${esc(r.schedule)}">` +
+          `<ha-icon icon="mdi:clock-outline"></ha-icon>` +
+          `${esc(schedAttrs.on_time)} → ${esc(schedAttrs.off_time)}` +
+          (span ? ` · ${esc(span)}` : "") +
+          `</span>`
       );
     }
     if (r.level) {

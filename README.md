@@ -45,7 +45,7 @@ of your day/night schedule.
 | `sensor.<name>_estimated_empty` | sensor | Timestamp of the expected empty date |
 | `button.<name>_new_cartridge` | button | Reset: new cartridge installed |
 | `number.<name>_cartridge_level` | number | Current level in % — set it to calibrate an already-used refill |
-| `switch.<name>_schedule` | switch | Pause/resume the built-in schedule (attrs: `active_months`, `in_season`) |
+| `switch.<name>_schedule` | switch | Pause/resume the built-in schedule (attrs: `active_months`, `in_season`, `on_time`, `off_time`) |
 | `binary_sensor.<name>_low` | binary_sensor | On when remaining % ≤ threshold (`problem` class) |
 
 ## Installation
@@ -165,7 +165,8 @@ The card shows:
   low threshold, red at it), with the remaining percentage below;
   set `gauge: donut` for the classic ring look,
 - **days left** at your measured pace, **runtime left**, **hours used**,
-- the **estimated empty date**, the install date, your average h/day and a
+- the **estimated empty date**, the install date, your average h/day, the
+  **schedule window** — e.g. `22:00 → 08:00 · Apr–Oct` — and a
   *Calibrate* shortcut (opens the level number entity),
 - a pulsing **diffusing now** dot (the outlet state) and a red
   **low-cartridge** banner when the threshold is crossed,
