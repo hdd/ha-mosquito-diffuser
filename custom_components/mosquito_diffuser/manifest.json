@@ -1,7 +1,7 @@
 {
   "domain": "mosquito_diffuser",
   "name": "Mosquito Diffuser",
-  "codeowners": ["@efesto"],
+  "codeowners": ["@hdd"],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://gitea.home.casamayolica.com/efesto/ha-mosquito-diffuser",
