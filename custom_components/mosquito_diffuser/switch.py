@@ -31,6 +31,13 @@ class ScheduleSwitch(MosquitoDiffuserEntity, SwitchEntity):
     def is_on(self) -> bool:
         return self.coordinator.schedule_active
 
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {
+            "active_months": sorted(self.coordinator.active_months),
+            "in_season": self.coordinator.in_season,
+        }
+
     async def async_turn_on(self, **kwargs) -> None:
         await self.coordinator.async_set_schedule_active(True)
 

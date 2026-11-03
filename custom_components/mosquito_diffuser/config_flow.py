@@ -25,6 +25,8 @@ from homeassistant.helpers.selector import (
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    ALL_MONTHS,
+    CONF_ACTIVE_MONTHS,
     CONF_CUSTOM_DAYS,
     CONF_CUSTOM_HPD,
     CONF_LEVEL_PCT,
@@ -44,6 +46,7 @@ from .const import (
     DEFAULT_ON_TIME,
     DOMAIN,
     LIFE_PRESETS,
+    MONTH_OPTIONS,
     OUTLET_DOMAINS,
 )
 
@@ -131,6 +134,9 @@ def _base_schema(defaults: dict[str, Any], include_level: bool = False) -> vol.S
 
 
 def _times_schema(defaults: dict[str, Any]) -> vol.Schema:
+    current_months = defaults.get(CONF_ACTIVE_MONTHS)
+    if current_months is None:
+        current_months = ALL_MONTHS
     return vol.Schema(
         {
             vol.Optional(
@@ -139,6 +145,17 @@ def _times_schema(defaults: dict[str, Any]) -> vol.Schema:
             vol.Optional(
                 CONF_OFF_TIME, default=defaults.get(CONF_OFF_TIME, DEFAULT_OFF_TIME)
             ): TimeSelector(),
+            vol.Required(
+                CONF_ACTIVE_MONTHS,
+                description="Months when the schedule switches the outlet on",
+                default=[str(m) for m in current_months],
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=MONTH_OPTIONS,
+                    multiple=True,
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
         }
     )
 
@@ -161,6 +178,23 @@ def _apply_life_preset(user_input: dict[str, Any]) -> None:
     if days > 0:
         hpd = float(user_input.get(CONF_CUSTOM_HPD, 24) or 24)
         user_input[CONF_LIFE_HOURS] = round(days * hpd, 2)
+
+
+def _normalize_months(user_input: dict[str, Any]) -> None:
+    """Store the month multi-select as a sorted list of month numbers (1–12).
+
+    A missing field falls back to "every month"; an explicit empty selection
+    is kept as-is, so the schedule then never switches the outlet on.
+    Invalid values fall back to "every month" so the schedule keeps working.
+    """
+    raw = user_input.get(CONF_ACTIVE_MONTHS)
+    if raw is None:
+        user_input[CONF_ACTIVE_MONTHS] = sorted(ALL_MONTHS)
+        return
+    try:
+        user_input[CONF_ACTIVE_MONTHS] = sorted({int(m) for m in raw})
+    except (TypeError, ValueError):
+        user_input[CONF_ACTIVE_MONTHS] = sorted(ALL_MONTHS)
 
 
 class MosquitoDiffuserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -201,6 +235,7 @@ class MosquitoDiffuserConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_time"
             else:
                 self._data.update(user_input)
+                _normalize_months(self._data)
                 return self._async_finish()
         return self.async_show_form(
             step_id="schedule", data_schema=_times_schema({}), errors=errors
@@ -258,6 +293,7 @@ class MosquitoDiffuserOptionsFlow(config_entries.OptionsFlow):
             if enabled and (not on_time or not off_time):
                 errors["base"] = "times_required"
             else:
+                _normalize_months(user_input)
                 if on_time:
                     user_input[CONF_ON_TIME] = on_time.strftime("%H:%M")
                 if off_time:

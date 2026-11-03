@@ -20,10 +20,11 @@
       },
       "schedule": {
         "title": "Schedule",
-        "description": "The integration switches the outlet automatically at these times. Usage only accrues while the outlet is on, so day presets assume continuous use; for night-rated refills use 'Custom hours' (nights × hours per night).",
+        "description": "The integration switches the outlet automatically at these times, during the selected months only (e.g. the mosquito season). Usage only accrues while the outlet is on, so day presets assume continuous use; for night-rated refills use 'Custom hours' (nights × hours per night).",
         "data": {
           "on_time": "Turn on at",
-          "off_time": "Turn off at"
+          "off_time": "Turn off at",
+          "active_months": "Active months"
         }
       }
     },
@@ -51,7 +52,8 @@
           "low_threshold_pct": "Low cartridge warning threshold (%)",
           "schedule_enabled": "Switch the outlet on a schedule",
           "on_time": "Turn on at",
-          "off_time": "Turn off at"
+          "off_time": "Turn off at",
+          "active_months": "Active months"
         }
       }
     },

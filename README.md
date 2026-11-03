@@ -23,8 +23,9 @@ of your day/night schedule.
 - **Forecasts** — remaining hours, remaining percent, and *days left at your
   measured usage pace* (with average h/day and estimated empty date).
 - **Built-in schedule (optional)** — the integration itself switches the
-  outlet on/off at configured times (e.g. 22:00 → 08:00). A *Schedule* switch
-  pauses it without deleting it.
+  outlet on/off at configured times (e.g. 22:00 → 08:00), **limited to the
+  months you select** (the mosquito season) so it can stay configured all
+  year. A *Schedule* switch pauses it without deleting it.
 - **Low-cartridge warning** — a binary sensor that turns on at a configurable
   remaining percentage.
 - **Dashboard widget** — a bundled Lovelace card: cartridge gauge, days left,
@@ -44,7 +45,7 @@ of your day/night schedule.
 | `sensor.<name>_estimated_empty` | sensor | Timestamp of the expected empty date |
 | `button.<name>_new_cartridge` | button | Reset: new cartridge installed |
 | `number.<name>_cartridge_level` | number | Current level in % — set it to calibrate an already-used refill |
-| `switch.<name>_schedule` | switch | Pause/resume the built-in schedule |
+| `switch.<name>_schedule` | switch | Pause/resume the built-in schedule (attrs: `active_months`, `in_season`) |
 | `binary_sensor.<name>_low` | binary_sensor | On when remaining % ≤ threshold (`problem` class) |
 
 ## Installation
@@ -67,8 +68,12 @@ then restart Home Assistant.
 1. Pick the **outlet entity** (switch/light/fan/humidifier, e.g.
    `switch.artemide`), the **rated cartridge life** in hours (check the refill
    box; 360 h ≈ 45 nights × 8 h is typical), and the **low warning threshold**.
-2. If you enable the schedule, choose **turn on / turn off times** — the
-   integration switches the outlet automatically. Disable your old on/off
+2. If you enable the schedule, choose **turn on / turn off times** and the
+   **active months** — the integration switches the outlet automatically, but
+   only during those months (e.g. April–October), so the configuration can
+   stay in place all year. Outside the season the schedule never switches
+   the outlet on; it still switches it off at the usual morning time, so a
+   forgotten outlet can't run all winter. Disable your old on/off
    automations for that plug (e.g. *Camera - Antizanzare On/OFF*) to avoid
    double control.
 3. When you replace the refill, press the **New cartridge** button.
@@ -119,6 +124,24 @@ a couple of days it converges to your real on/off rhythm.
 rated life, threshold and schedule at any time. The cartridge counter is
 preserved across changes and restarts.
 
+### Season (active months)
+
+The schedule's **Active months** multi-select controls when the on/off
+times are enforced — pick the mosquito season once and leave the
+integration alone for the rest of the year:
+
+- During the selected months the outlet is switched on/off at the
+  configured times (subject to the *Schedule* pause switch).
+- Outside them the schedule never switches the outlet on, and still
+  switches it off at the off time (idempotent, and a safety net for a
+  manually-forgotten outlet).
+- Selecting no month keeps the schedule from switching the outlet on at
+  any time — equivalent to leaving it paused all year.
+- The `switch.<name>_schedule` entity exposes `active_months` and
+  `in_season` attributes, handy for conditions in your own automations.
+- On the dashboard card the subtitle shows *out of season* while the
+  schedule is on hold for the month.
+
 ## Dashboard widget
 
 The integration ships a compact **Lovelace card**: cartridge status at a
@@ -137,8 +160,10 @@ entity: sensor.<name>_remaining
 
 The card shows:
 
-- a **donut gauge** with the remaining percentage — green / amber / red as
-  the cartridge depletes (amber from double your low threshold, red at it),
+- a **vertical cartridge gauge** — a fill bar with graduation ticks,
+  green / amber / red as the cartridge depletes (amber from double your
+  low threshold, red at it), with the remaining percentage below;
+  set `gauge: donut` for the classic ring look,
 - **days left** at your measured pace, **runtime left**, **hours used**,
 - the **estimated empty date**, the install date, your average h/day and a
   *Calibrate* shortcut (opens the level number entity),
@@ -156,6 +181,7 @@ Clicking the gauge or any stat opens that entity's more-info dialog.
 | `entity` | — | Any entity of this diffuser (e.g. `sensor.<name>_remaining`); siblings are auto-detected from the id |
 | `name` | device name | Card title |
 | `icon` | `mdi:bug` | Header icon |
+| `gauge` | `bar` | Gauge style: vertical progress bar (`bar`) or the classic ring (`donut`) |
 | `outlet_entity` | auto (from sensor attributes) | The smart plug entity |
 | `days_entity`, `runtime_entity`, `used_entity`, `empty_entity`, `button_entity`, `level_entity`, `schedule_entity`, `low_entity` | auto | Explicit overrides, e.g. if you renamed the entities |
 

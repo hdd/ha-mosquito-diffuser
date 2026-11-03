@@ -1,5 +1,6 @@
 """Constants for the Mosquito Diffuser integration."""
 
+import calendar
 from datetime import timedelta
 
 from homeassistant.const import Platform
@@ -26,6 +27,7 @@ CONF_LOW_THRESHOLD = "low_threshold_pct"
 CONF_SCHEDULE_ENABLED = "schedule_enabled"
 CONF_ON_TIME = "on_time"
 CONF_OFF_TIME = "off_time"
+CONF_ACTIVE_MONTHS = "active_months"
 
 DEFAULT_NAME = "Mosquito Diffuser"
 DEFAULT_LIFE_HOURS = 360.0  # ~45 nights x 8 h, typical for liquid refills
@@ -43,6 +45,14 @@ LIFE_PRESETS: dict[str, float | None] = {
 }
 
 OUTLET_DOMAINS = ["switch", "light", "fan", "humidifier"]
+
+# Months (1–12) during which the built-in schedule may switch the outlet on.
+ALL_MONTHS: list[int] = list(range(1, 13))
+
+# Selector options for the month picker: value = month number as a string.
+MONTH_OPTIONS: list[dict[str, str]] = [
+    {"value": str(month), "label": calendar.month_name[month]} for month in ALL_MONTHS
+]
 
 STORAGE_VERSION = 1
 PERSIST_DELAY = 60  # seconds after a change before the accumulator is flushed

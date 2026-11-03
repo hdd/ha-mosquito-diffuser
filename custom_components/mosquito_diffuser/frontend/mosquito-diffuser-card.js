@@ -2,11 +2,13 @@
  * Mosquito Diffuser Card — the companion Lovelace widget for the
  * `mosquito_diffuser` custom integration.
  *
- * Cartridge status at a glance: a donut gauge with the remaining
+ * Cartridge status at a glance: a vertical cartridge gauge (or the classic
+ * donut, `gauge: donut`) with the remaining
  * percentage, days left at the measured pace, runtime left, hours used,
  * the estimated empty date, install date and average pace — plus a
  * low-cartridge banner and one-tap actions: "new cartridge" reset
- * (two-tap confirm), schedule pause/resume and outlet toggle.
+ * (two-tap confirm), schedule pause/resume and outlet toggle. The subtitle
+ * flags when the schedule is paused or outside its active months.
  *
  * Plain web component: no build step, no external dependencies.
  *
@@ -20,10 +22,11 @@
  * Every sibling can also be set explicitly:
  *
  *   name, icon, outlet_entity, days_entity, runtime_entity, used_entity,
- *   empty_entity, button_entity, level_entity, schedule_entity, low_entity
+ *   empty_entity, button_entity, level_entity, schedule_entity, low_entity,
+ *   gauge ("bar" default, "donut")
  */
 
-const CARD_VERSION = "1.1.0";
+const CARD_VERSION = "1.3.0";
 const DEFAULT_ICON = "mdi:bug";
 
 /** Known entity-id suffixes of the integration (longest first). */
@@ -121,6 +124,46 @@ const STYLE = `
 .donut-label {
   font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase;
   color: var(--secondary-text-color); margin-top: 4px;
+}
+
+/* Vertical cartridge gauge (default) */
+.vbar {
+  flex: none;
+  display: flex; flex-direction: column; align-items: center;
+  width: 92px;
+  cursor: pointer;
+}
+.vbar-track {
+  position: relative;
+  width: 32px; height: 120px;
+  border-radius: 16px;
+  background: rgba(127, 127, 127, 0.25);
+  overflow: hidden;
+}
+.vbar-fill {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: calc(var(--pct) * 1%);
+  border-radius: 16px;
+  background: var(--ring);
+  transition: height 0.6s ease;
+}
+.vbar-tick {
+  position: absolute; left: 7px; right: 7px; height: 1px;
+  background: rgba(127, 127, 127, 0.35);
+  z-index: 1; pointer-events: none;
+}
+.vbar-value { display: flex; align-items: baseline; margin-top: 7px; }
+.vbar-value .num {
+  font-size: 30px; font-weight: 700; line-height: 1;
+  color: var(--primary-text-color);
+}
+.vbar-value .unit {
+  font-size: 14px; font-weight: 600;
+  color: var(--secondary-text-color); margin-left: 2px;
+}
+.vbar-label {
+  font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--secondary-text-color); margin-top: 3px; text-align: center;
 }
 
 .stats { flex: 1; display: flex; flex-direction: column; gap: 4px; }
@@ -340,6 +383,7 @@ class MosquitoDiffuserCard extends HTMLElement {
         attrs.threshold_pct || "",
         attrs.average_hours_per_day || "",
         attrs.installed_at || "",
+        attrs.in_season === undefined ? "" : String(attrs.in_season),
       ].join("=");
     };
     return [
@@ -386,6 +430,10 @@ class MosquitoDiffuserCard extends HTMLElement {
     const lowOn = !!lowState && lowState.state === "on";
     const scheduleState = this._st(r.schedule);
     const schedulePaused = !!scheduleState && scheduleState.state === "off";
+    const inSeason =
+      !scheduleState ||
+      !scheduleState.attributes ||
+      scheduleState.attributes.in_season !== false;
     const daysState = this._st(r.days);
     const daysAttrs = (daysState && daysState.attributes) || {};
 
@@ -437,7 +485,8 @@ class MosquitoDiffuserCard extends HTMLElement {
 
     const subtitle =
       (outletState ? (outletOn ? "Diffusing now" : "Off") : "—") +
-      (schedulePaused ? " · schedule paused" : "");
+      (schedulePaused ? " · schedule paused" : "") +
+      (!schedulePaused && !inSeason ? " · out of season" : "");
 
     const actions = [];
     if (r.reset) {
@@ -463,10 +512,29 @@ class MosquitoDiffuserCard extends HTMLElement {
       );
     }
 
-    const donutValue =
+    const gaugeValue =
       pct === null
         ? `<span class="num">—</span>`
         : `<span class="num">${Math.round(pct)}</span><span class="unit">%</span>`;
+
+    const gauge =
+      this._config.gauge === "donut"
+        ? `<div class="donut" data-entity="${esc(r.pct)}"
+               style="--pct:${pct === null ? 0 : pct}; --ring:${this._ringColor(pct)}">
+             <div class="donut-value">${gaugeValue}</div>
+             <div class="donut-label">cartridge left</div>
+           </div>`
+        : `<div class="vbar" data-entity="${esc(r.pct)}"
+               style="--pct:${pct === null ? 0 : pct}; --ring:${this._ringColor(pct)}">
+             <div class="vbar-track">
+               <div class="vbar-fill"></div>
+               <i class="vbar-tick" style="bottom:25%"></i>
+               <i class="vbar-tick" style="bottom:50%"></i>
+               <i class="vbar-tick" style="bottom:75%"></i>
+             </div>
+             <div class="vbar-value">${gaugeValue}</div>
+             <div class="vbar-label">cartridge left</div>
+           </div>`;
 
     this.shadowRoot.innerHTML = `
       <style>${STYLE}</style>
@@ -483,11 +551,7 @@ class MosquitoDiffuserCard extends HTMLElement {
           </div>
           ${banner}
           <div class="main">
-            <div class="donut" data-entity="${esc(r.pct)}"
-                 style="--pct:${pct === null ? 0 : pct}; --ring:${this._ringColor(pct)}">
-              <div class="donut-value">${donutValue}</div>
-              <div class="donut-label">cartridge left</div>
-            </div>
+            ${gauge}
             <div class="stats">${stats}</div>
           </div>
           ${metaBits.length ? `<div class="meta">${metaBits.join("")}</div>` : ""}

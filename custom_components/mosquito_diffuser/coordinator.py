@@ -27,6 +27,8 @@ from homeassistant.helpers.event import (
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    ALL_MONTHS,
+    CONF_ACTIVE_MONTHS,
     CONF_LIFE_HOURS,
     CONF_LOW_THRESHOLD,
     CONF_OFF_TIME,
@@ -48,6 +50,21 @@ def _parse_hhmm(value: Any) -> time | None:
     return dt_util.parse_time(value) or dt_util.parse_datetime(str(value))
 
 
+def _season_months(raw: Any) -> set[int]:
+    """Month numbers (1–12) the schedule may switch the outlet on in.
+
+    Missing or malformed data means "every month"; an explicit empty list
+    is preserved (the schedule never switches the outlet on).
+    """
+    if raw is None:
+        return set(ALL_MONTHS)
+    try:
+        months = {int(m) for m in raw}
+    except (TypeError, ValueError):
+        return set(ALL_MONTHS)
+    return {m for m in months if 1 <= m <= 12}
+
+
 class MosquitoDiffuserCoordinator:
     """Usage accounting + schedule engine for one diffuser instance."""
 
@@ -62,6 +79,7 @@ class MosquitoDiffuserCoordinator:
         self.schedule_enabled: bool = bool(data.get(CONF_SCHEDULE_ENABLED, False))
         self.on_time: time | None = _parse_hhmm(data.get(CONF_ON_TIME))
         self.off_time: time | None = _parse_hhmm(data.get(CONF_OFF_TIME))
+        self.active_months: set[int] = _season_months(data.get(CONF_ACTIVE_MONTHS))
 
         self.used_hours: float = 0.0
         self.installed_at: datetime = dt_util.utcnow()
@@ -167,8 +185,13 @@ class MosquitoDiffuserCoordinator:
 
     @callback
     def _async_apply_schedule(self, turn_on: bool) -> None:
-        """Switch the outlet at schedule time, unless paused."""
+        """Switch the outlet at schedule time, unless paused or out of season."""
         if not self.schedule_active or not self.schedule_enabled:
+            return
+        if turn_on and not self.in_season:
+            # Out of season the schedule never switches the outlet on. The
+            # off event is not gated by the season, so an outlet left on as
+            # the season ends is still switched off at the usual time.
             return
         state = self.hass.states.get(self.outlet_entity)
         if state is None:
@@ -236,6 +259,11 @@ class MosquitoDiffuserCoordinator:
         await self.async_persist()
 
     # ------------------------------------------------------------- derived
+    @property
+    def in_season(self) -> bool:
+        """True when the current local month is in the selected season."""
+        return dt_util.now().month in self.active_months
+
     @property
     def remaining_hours(self) -> float:
         return max(self.life_hours - self.used_hours, 0.0)
